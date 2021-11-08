@@ -5,22 +5,28 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.sql.SQLOutput;
 import java.util.Scanner;
 
 // Has two threads, one for listening for incoming messages from the server, and one to send messages to server
 public class ChatClient {
     String userName;
+    Socket socket;
+    PrintWriter out;
+    BufferedReader in;
 
-    ChatClient(String userName) {this.userName = userName;}
-
-    public void sendMessage(int portNr) throws IOException {
-
+    ChatClient(String userName ) throws IOException {
+        this.userName = userName;
         //Connect to the ChatServer
-        Socket socket = new Socket(portNr);
-        //Write to the server through outputstream
-        PrintWriter out = new PrintWriter(socket.getOutputStream());
+        socket = new Socket("localhost", 8080);
 
+        //write to the server through outputstream
+        out = new PrintWriter(socket.getOutputStream());
+    }
+
+    public void sendMessage() throws IOException {
         Scanner sc = new Scanner(System.in);
+        System.out.println("Hi " + userName + ". Type a message:");
         while(socket.isConnected()) {
             // Take user input
             String message = sc.nextLine();
@@ -29,14 +35,38 @@ public class ChatClient {
         }
     }
 
-    //listens to messages being sent by other clients
-    public void receiveMessage() {
-        
+    //listens to messages being sent by other clients, needs to be done on a separate thread (blocking op)
+    public void receiveMessage() throws IOException {
+        Runnable listen = new Runnable() {
+            @Override
+            public void run() {
+                while (socket.isConnected()) {
+                    try {
+                        System.out.println(in.readLine()); //print message sent by other clients through server
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        };
+
+        //Start thread with runnable task
+        Thread thread = new Thread(listen);
+        thread.start();
+
     }
 
     public static void main(String[] args) throws IOException {
-        ChatClient chatClient = new ChatClient();
-        chatClient.sendMessage(8080);
+        System.out.println("Hi, please enter your name:");
+        Scanner sc = new Scanner(System.in);
+        String userName = sc.nextLine();
+        ChatClient chatClient = new ChatClient(userName);
+
+        //Both runs in parallell
+        chatClient.sendMessage();
+        chatClient.receiveMessage();
+
     }
+
 
 }

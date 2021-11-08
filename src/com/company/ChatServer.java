@@ -37,9 +37,11 @@ public class ChatServer {
                 try{
                     //message is recieved by user input through to the clientSocket
                     message = in.readLine();
+                    System.out.println("Sent by client:" + message);
                     forwardMessage(message); //forward the message to other clients
                 }catch(IOException e){
-
+                    System.out.println(e);
+                    break; //if client leaves chat
                 }
 
             }
@@ -69,6 +71,7 @@ public class ChatServer {
     public void startChatServer(int portNum) throws IOException {
         // The serverSocket is used to listen for client request for connection to server
         ServerSocket serverSocket = new ServerSocket(portNum);
+        System.out.println("Chat server is up and running");
 
         //keep track of client to differentiate between other clients
         int clientID = 0;
@@ -76,8 +79,7 @@ public class ChatServer {
         while (!serverSocket.isClosed()) {
             // Accept client request and send/recieve data through this socket
             Socket clientSocket = serverSocket.accept();
-
-
+            System.out.println("New incoming client. Client:" + clientSocket.getInetAddress());
 
             // One thread for each client currently connected to server
             // Runnable task to be run in separate thread for client
