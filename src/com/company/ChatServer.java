@@ -3,7 +3,6 @@ package com.company;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.sql.SQLOutput;
 import java.util.ArrayList;
 
 
@@ -37,7 +36,7 @@ public class ChatServer {
                 try{
                     //message is recieved by user input through to the clientSocket
                     message = in.readLine();
-                    System.out.println("Sent by client:" + message);
+                    System.out.println("DEBUG: Inside of run: Sent by " + message);
                     forwardMessage(message); //forward the message to other clients
                 }catch(IOException e){
                     System.out.println(e);
@@ -45,15 +44,24 @@ public class ChatServer {
                 }
 
             }
+            try {
+                removeClient();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
 
         public void forwardMessage(String message){
             for(int i = 0; i < clients.size(); i++){
                 ClientTask client = clients.get(i);
+
                 if(client.clientID != clientID) {
+                    System.out.println("DEBUG: inside of forwardmessage: " + clientID + " to " + client.clientID);
                     //write the message to the other user
-                    client.out.write(message);
+                    client.out.write(message + '\n');
                     client.out.flush();
+                    System.out.println("DEBUG: inside of forwardmessage: " + message);
+
                 }
             }
         }
