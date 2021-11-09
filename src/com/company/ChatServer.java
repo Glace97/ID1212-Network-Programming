@@ -3,6 +3,7 @@ package com.company;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.ArrayList;
 
 
@@ -31,47 +32,52 @@ public class ChatServer {
 
         @Override
         public void run() {
-            String message;
-            while(clientSocket.isConnected()){
-                try{
+            try {
+                String message;
+                while (clientSocket.isConnected()) {
+
                     //message is recieved by user input through to the clientSocket
                     message = in.readLine();
-                    System.out.println("DEBUG: Inside of run: Sent by " + message);
+                    //  System.out.println("DEBUG: Inside of run: Sent by " + message);
                     forwardMessage(message); //forward the message to other clients
-                }catch(IOException e){
-                    System.out.println(e);
-                    break; //if client leaves chat
                 }
 
-            }
-            try {
-                removeClient();
             } catch (IOException e) {
-                e.printStackTrace();
+                System.out.println(e);
+                removeClient();
             }
+
+
         }
 
-        public void forwardMessage(String message){
-            for(int i = 0; i < clients.size(); i++){
+        public void forwardMessage(String message) {
+            for (int i = 0; i < clients.size(); i++) {
                 ClientTask client = clients.get(i);
 
-                if(client.clientID != clientID) {
+                if (client.clientID != clientID) {
                     System.out.println("DEBUG: inside of forwardmessage: " + clientID + " to " + client.clientID);
                     //write the message to the other user
-                    client.out.write(message + '\n');
-                    client.out.flush();
-                    System.out.println("DEBUG: inside of forwardmessage: " + message);
-
+                    try {
+                        client.out.write(message + '\n');
+                        client.out.flush();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                 }
             }
         }
 
-        public void removeClient() throws IOException {
+        public void removeClient() {
             //remove self from clients and close all streams
-            clients.remove(this);
-            out.close();
-            in.close();
-            clientSocket.close();;
+            try {
+                System.out.println("User left the chat");
+                clients.remove(this);
+                out.close();
+                in.close();
+                clientSocket.close();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -79,7 +85,6 @@ public class ChatServer {
     public void startChatServer(int portNum) throws IOException {
         // The serverSocket is used to listen for client request for connection to server
         ServerSocket serverSocket = new ServerSocket(portNum);
-        System.out.println("Chat server is up and running");
 
         //keep track of client to differentiate between other clients
         int clientID = 0;
@@ -87,7 +92,7 @@ public class ChatServer {
         while (!serverSocket.isClosed()) {
             // Accept client request and send/recieve data through this socket
             Socket clientSocket = serverSocket.accept();
-            System.out.println("New incoming client. Client:" + clientSocket.getInetAddress());
+            System.out.println("New incoming client. Client:" + clientSocket.getInetAddress()); //will be the same adress as running from this computer
 
             // One thread for each client currently connected to server
             // Runnable task to be run in separate thread for client
@@ -96,6 +101,7 @@ public class ChatServer {
             clients.add(clientTask); //add the client to list of clients
             clientID++;
 
+            //start the client in a separate thread
             Thread thread = new Thread(clientTask);
             thread.start();
 
@@ -103,8 +109,8 @@ public class ChatServer {
     }
 
     public static void main(String[] args) throws IOException {
-       ChatServer server = new ChatServer();
-       server.startChatServer(8080);
+        ChatServer server = new ChatServer();
+        server.startChatServer(8080);
     }
 }
 
