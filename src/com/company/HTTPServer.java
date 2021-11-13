@@ -37,11 +37,24 @@ public class HTTPServer {
             //String startLine = "GET /background.png HTTP/1.0"; //example string for testing
             String[] tokens = startLine.split(" ");
 
-            String method = tokens[0]; //should contain GET or POST
+            //TODO: skippa favicon requesten (den ska inte renderera någonting nytt;
 
-            response.write("HTTP/1.1 200 OK\r\n\r\n");
-            response.write("hello");
-            response.write("\r\n");
+            //if new game
+            Guess session = new Guess(clientID);
+            sessions.add(session);
+
+            String index = session.index;
+
+            response.println("HTTP/1.1 200 OK");
+            response.print("Content-Type: index/html");
+            response.println("Content-Length: " + index.length());
+            //TODO: printa Set-Cookie headern
+
+            //TODO: printa strängar nödvändiga för gamelogiken
+
+            //TODO: printa form
+            response.println(index);
+
             response.flush();
 
             //close the connection
