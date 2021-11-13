@@ -6,4 +6,5 @@
 /httpRequests/
 **/.idea/**
 *.iml
+*.class
 /out

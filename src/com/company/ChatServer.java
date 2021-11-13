@@ -85,12 +85,13 @@ public class ChatServer {
     public void startChatServer(int portNum) throws IOException {
         // The serverSocket is used to listen for client request for connection to server
         ServerSocket serverSocket = new ServerSocket(portNum);
-
+        System.out.println("SERVER RUNNING");
         //keep track of client to differentiate between other clients
         int clientID = 0;
 
         while (!serverSocket.isClosed()) {
             // Accept client request and send/recieve data through this socket
+            // Runs on the main thread
             Socket clientSocket = serverSocket.accept();
             System.out.println("New incoming client. Client:" + clientSocket.getInetAddress()); //will be the same adress as running from this computer
 

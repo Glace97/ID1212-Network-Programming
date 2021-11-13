@@ -18,6 +18,7 @@ public class ChatClient {
             this.userName = userName;
             //Connect to the ChatServer
             socket = new Socket("localhost", 8080);
+            //socket.getLocalPort();
 
             //write to the server through outputstream
             out = new PrintWriter(socket.getOutputStream());
