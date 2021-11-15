@@ -69,13 +69,13 @@ public class HTTPServer {
                 line = request.readLine();;
             };
 
-
+            // read post body
             if(contentLength != 0) {
                 char[] body = new char[contentLength];
-                System.out.println("before read body");
+               // System.out.println("before read body");
                 request.read(body, 0, contentLength);
                 String postBody = new String(body); //Guess=<gissning>
-                System.out.println(postBody);
+               // System.out.println(postBody);
                 guess = postBody.split("=")[1];
                 System.out.println(guess);
             }
@@ -100,7 +100,7 @@ public class HTTPServer {
     }
 
 
-    // returns a an existin session or a completely new one
+    // returns a an existing session or a completely new one
     public Guess handleSession(int sessionID, String stringGuess) {
         Guess session;
         int guess = Integer.parseInt(stringGuess); //parse to int
@@ -111,10 +111,19 @@ public class HTTPServer {
             for (Guess existingSession : sessions) {
                 if (existingSession.sessionID == sessionID) {
                     session = existingSession;
-                    response.println("Set-Cookie: sessionID=" + sessionID);
 
                     //test the guess. Guess class updates html to be shown
                     session.guess(guess);
+
+                    //check if the user won the game
+                    if(session.finishedGame) {
+                        System.out.println("finished game remove cookie");
+                        response.println("Set-Cookie: sessionsID=deleted; path=/; domain=localhost; Max-Age=0;");  //old expiration date on cookie
+                        sessions.remove(session);
+                        //response.println("Set-Cookie: testcookie=2");
+                    } else {
+                        response.println("Set-Cookie: sessionID=" + sessionID);
+                    }
 
                     return session;
                 }

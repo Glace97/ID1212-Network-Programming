@@ -9,9 +9,11 @@ public class Guess {
     int secretNum;
     int sessionID;
     String index; //dynamically decide which page to show user
+    boolean finishedGame = false;
 
     public Guess(int cliendID) {
         this.secretNum = generateSecreteNum(); //"unique" for this session
+        //this.secretNum = 50;
         this.sessionID = cliendID;
 
         //test HTML
@@ -72,7 +74,7 @@ public class Guess {
                     "</html>";
         }
         if (guess == secretNum) {
-            //Congrats! You made it
+            finishedGame = true;
             this.index =
                     "<!DOCTYPE html>\n" +
                     "<html lang=\"en\">\n" +
@@ -83,7 +85,7 @@ public class Guess {
                     "</head>\n" +
                     "<body>\n" +
                     "       <text>You made it in " + attempts + "guess(es). Press button to try again.</text>\n" +
-                    "       <form action=\"http://localhost:8080/\" method=\"post\" >\n" +
+                    "       <form>\n" +
                     "           <input type=\"submit\" value=\"New game\">\n" +
                     "       </form>\n" +
                     "</body>\n" +
