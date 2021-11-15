@@ -32,8 +32,6 @@ public class HTTPServer {
             request = new BufferedReader(new InputStreamReader(client.getInputStream()));
             response = new PrintWriter(client.getOutputStream());
 
-
-
             // Check if the client already has a session
             // Extract the sessionID for session
             StringBuilder sb = new StringBuilder();
@@ -50,12 +48,11 @@ public class HTTPServer {
             String guess = "0";
             //sessionID is overwritten if the request if from an existing guessing game
             int sessionID = 0;
-
-
+            int contentLength = 0;
 
            //only reads headers
             while(!line.isEmpty()) {
-                //System.out.println(line);
+                System.out.println(line);
 
                 if (line.contains("Cookie: ")) {
                     cookieHeader = line.split(" ");
@@ -63,21 +60,25 @@ public class HTTPServer {
                     sessionID = Integer.parseInt(keyVal[1]);
                 }
 
-                line = request.readLine();
-                sb.append(line + '\n');
+                //if header indicates there are more bytes to read
+                if (line.contains("Content-Length:")){
+                    contentLength = Integer.parseInt(line.split(" ")[1]); //length of body
+                    System.out.println("The content length: " + contentLength);
+                }
+
+                line = request.readLine();;
             };
 
-            if(sb.toString().contains("Content-Length:")) {
-                line = request.readLine();
-                sb.append(line);
 
-                if(line.contains("Guess")){
-                    guess = line.split("=")[1];
-                }
+            if(contentLength != 0) {
+                char[] body = new char[contentLength];
+                System.out.println("before read body");
+                request.read(body, 0, contentLength);
+                String postBody = new String(body); //Guess=<gissning>
+                System.out.println(postBody);
+                guess = postBody.split("=")[1];
+                System.out.println(guess);
             }
-
-            System.out.println(sb.toString());
-
 
             response.println("HTTP/1.1 200 OK");
             response.println("Content-Type: text/html");
