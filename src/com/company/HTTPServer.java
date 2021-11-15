@@ -3,7 +3,9 @@ package com.company;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.sql.Struct;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class HTTPServer {
     ServerSocket serverSocket;
@@ -24,88 +26,110 @@ public class HTTPServer {
         // Wait for new clients to connect to the game
         // Naive approach, this does not scale and only handles one client a time
         while (!serverSocket.isClosed()) {
-            System.out.println("Waiting for client...");
             Socket client = serverSocket.accept(); //client request
-            System.out.println("Client connected.");
 
             // Set I/O streams
             request = new BufferedReader(new InputStreamReader(client.getInputStream()));
             response = new PrintWriter(client.getOutputStream());
 
 
+
             // Check if the client already has a session
             // Extract the sessionID for session
-            String line;
+            StringBuilder sb = new StringBuilder();
+            String line = request.readLine();
+            sb.append(line);
+
+            if(line.contains("GET /favicon.ico HTTP/1.1")){
+                //Skip the favicon requests
+                continue;
+            }
+
             String[] cookieHeader;
             String[] keyVal;
+            String guess = "0";
+            //sessionID is overwritten if the request if from an existing guessing game
             int sessionID = 0;
-            while (!(line = request.readLine()).isEmpty()) {
 
-                if(line.contains("Guess:"))
 
-                if (line.contains("Cookie:")) {
+
+           //only reads headers
+            while(!line.isEmpty()) {
+                //System.out.println(line);
+
+                if (line.contains("Cookie: ")) {
                     cookieHeader = line.split(" ");
                     keyVal = cookieHeader[1].split("=");
                     sessionID = Integer.parseInt(keyVal[1]);
                 }
+
+                line = request.readLine();
+                sb.append(line + '\n');
+            };
+
+            if(sb.toString().contains("Content-Length:")) {
+                line = request.readLine();
+                sb.append(line);
+
+                if(line.contains("Guess")){
+                    guess = line.split("=")[1];
+                }
             }
 
-            //hämta gamelogik isf
+            System.out.println(sb.toString());
 
-
-            //TODO: skippa favicon requesten (den ska inte renderera någonting nytt;
-
-
-
-            // might be overwritten with a existing session, might be a new one
-            Guess session;
 
             response.println("HTTP/1.1 200 OK");
             response.println("Content-Type: text/html");
-            response.println("Content-Length: " + index.length());
 
-            if (sessionID == 0) {
-                // The first session for the client. Set cookie with next available sessionID
-                response.println("Set-Cookie: sessionID=" + nextSessionID);
+            //Either creates a new session or returns the existing one
+            Guess session = handleSession(sessionID, guess);
 
-                //Generate a new session
-                session = new Guess(nextSessionID);
-                sessions.add(session);
+            response.println("Content-Length: " + session.index.length());
+            response.println("\r\n");
 
-                nextSessionID++;
-            } else {
-                // Assign the original cookie
-                response.println("Set-Cookie: sessionID=" + sessionID);
+            response.println(session.index);
+            response.flush();
 
-                //plocka ut gissningen härifån?
-                for (Guess session : sessions) {
-                    if (session.sessionID == sessionID) {
-                        //Vi har rätt session, kolla om vi har rätt gissnig
+            //close the connection
+            request.close();
+            response.close();
+            client.close();
+        }
+    }
 
 
+    // returns a an existin session or a completely new one
+    public Guess handleSession(int sessionID, String stringGuess) {
+        Guess session;
+        int guess = Integer.parseInt(stringGuess); //parse to int
 
-                        String index = session.index;
-                    }
+        // if the sessionID is overwritten, the request must be coming from an existing guessing game
+        if (sessionID != 0) {
+            //plocka ut gissningen härifån?
+            for (Guess existingSession : sessions) {
+                if (existingSession.sessionID == sessionID) {
+                    session = existingSession;
+                    response.println("Set-Cookie: sessionID=" + sessionID);
+
+                    //test the guess. Guess class updates html to be shown
+                    session.guess(guess);
+
+                    return session;
                 }
             }
         }
 
-        response.println("\r\n");
-        //TODO: printa Set-Cookie headern
+        //Else, this must be a completey new hame
+        response.println("Set-Cookie: sessionID=" + nextSessionID);
 
-        //TODO: printa strängar nödvändiga för gamelogiken
+        //Generate a new session
+        session = new Guess(nextSessionID);
+        sessions.add(session);
+        nextSessionID++;
+        return session;
 
-        //TODO: printa form
-        response.println(index);
-        response.flush();
-
-        //close the connection
-        request.close();
-        response.close();
-        client.close();
     }
-
-}
 
     public static void main(String[] args) throws IOException {
         HTTPServer guessingGame = new HTTPServer(8080);
